@@ -1,0 +1,59 @@
+# To run enter the following into gcloud: gcloud deployment-manager deployments create DEPLOYMENT_NAME --config config.yaml
+
+resources:
+# Cloud Scheduler Build
+- name: export-to-csv
+  type: gcp-types/cloudscheduler-v1beta1:projects.locations.jobs
+  properties:
+    name: export-to-csv
+    pubsubTarget:
+      topicName: projects/{{ properties.project }}/topics/{{ properties.topic }}
+      data: {{ properties.messageBody }}
+    schedule: "00 7 * * *"
+    timeZone: "US/Pacific"
+    httpTarget: {}
+    retryConfig:
+      retryCount: 5
+      maxRetryDuration: "300s"
+      minBackoffDuration: "10s"
+      maxBackoffDuration: "300s"
+    project: YOUR_PROJECT_ID
+    topic: export-to-csv
+    messageBody: "Sent Scheduled Email"
+
+
+# Send Email Cloud Function
+- name: email-csv
+  type: cloud_function_v2.jinja
+  properties:
+    functionName: email-csv
+    runtime: python310
+    sourceArchiveUrl: gs://FUNCTION_BUCKET_NAME/email-csv/function-source.zip # Location of email-csv function in GCP Storage
+    entryPoint: send_csv_email
+    eventTrigger: true
+    envVariables:
+      SENDGRID_API_KEY: YOUR_SENDGRID_API_KEY
+
+# Send Email Eventarc Trigger
+- name: email-csv-trigger
+  type: pubsub_trigger.jinja
+  properties:
+    topic: export_to_csv
+    targetService: email-csv
+    eventType: google.pubsub.topic.publish
+
+# Push New Data to BigQuery
+- name: get-new-upload-function
+  type: gcp-types/cloudfunctions-v1:projects.locations.functions
+  properties:
+    parent: projects/PROJECT_ID/locations/us-west1
+    function: get-new-upload
+    sourceArchiveUrl: gs://FUNCTION_BUCKET_NAME/get-new-upload_function-source.zip
+    entryPoint: get_new_data
+    runtime: python310
+    eventTrigger:
+      eventType: google.storage.object.finalize
+      resource: projects/_/buckets/YOUR_DATA_BUCKET_NAME
+      failurePolicy: {}
+    serviceAccountEmail: PROJECT_NUMBER-compute@developer.gserviceaccount.com
+
