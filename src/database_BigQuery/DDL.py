@@ -8,19 +8,25 @@
 # --    Author: Google Cloud Guides
 # --    URL: https://cloud.google.com/bigquery/docs/tables
 # --    Last updated: 2023-01-31 UTC
+import os
 from google.cloud import bigquery
+from dotenv import load_dotenv
+
+load_dotenv()
+
+dataset = os.getenv("DATASET_NAME")
+ndt7_table_name = os.getenv("NDT7_TABLE_NAME")
+multistream_table_name = os.getenv("MULTISTREAM_TABLE_NAME")
 
 client = bigquery.Client()
 # -- #####################################################
 # -- TABLE PARAMETERS
 # -- #####################################################
-# project_dataset = "cs467-capstone-dummy-data.DeviceBroadbandData."
-dataset = "DeviceBroadbandData"
 project_dataset = client.project + '.' + dataset
 # -- -----------------------------------------------------
 # -- Table NDT-7
 # -- -----------------------------------------------------
-ndt7_table_id = project_dataset + '.' + "NDT-7"
+ndt7_table_id = project_dataset + '.' + ndt7_table_name
 
 ndt7_schema = [
     bigquery.SchemaField("MinRTTUnit", "STRING", mode="NULLABLE"),
@@ -49,7 +55,7 @@ ndt7_schema = [
 # -- -----------------------------------------------------
 # -- Table Multistream
 # -- -----------------------------------------------------
-multistream_table_id = project_dataset + '.' + "Multistream"
+multistream_table_id = project_dataset + '.' + multistream_table_name
 
 multistream_schema = [
     bigquery.SchemaField("Country", "STRING", mode="NULLABLE"),
