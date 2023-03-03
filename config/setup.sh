@@ -2,6 +2,13 @@
 #
 # This script is intended to be run once to setup GCP resources 
 # for the PAgCASA-Report-Emailer
+# You may need to enable IAM permssions by running the following command
+
+# Enable IAM permissions:
+#gcloud iam service-accounts add-iam-policy-binding \
+#    PROJECT_NUMBER-compute@developer.gserviceaccount.com \
+#    --member MEMBER \
+#    --role roles/iam.serviceAccountUser
 
 usage="$0 <bucket>"
 gcs_bucket=${1:?Please provide the GCS bucket: ${usage}}
@@ -22,11 +29,6 @@ fi
 # Make the tables
 python3 src/database_BigQuery/DDL.py
 
-# Enable IAM permissions
-#gcloud iam service-accounts add-iam-policy-binding \
-#    PROJECT_NUMBER-compute@developer.gserviceaccount.com \
-#    --member MEMBER \
-#    --role roles/iam.serviceAccountUser
 
 # Deploy Export to BQ
 echo "Connecting GCS bucket $mybucket to Export to BigQuery Cloud Function"
