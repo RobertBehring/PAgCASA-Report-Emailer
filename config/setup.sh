@@ -10,6 +10,12 @@
 #    --member MEMBER \
 #    --role roles/iam.serviceAccountUser
 
+# gcloud iam service-accounts add-iam-policy-binding \
+#    646746772657-compute@developer.gserviceaccount.com \
+#    --member serviceAccountyounjada@oregonstate.edu \
+#    --role roles/cloudfunctions.admin
+
+
 usage="$0 <bucket>"
 gcs_bucket=${1:?Please provide the GCS bucket: ${usage}}
 
@@ -40,7 +46,8 @@ gcloud functions deploy get-new-upload \
 --source=./src/export_to_bq \
 --entry-point=get_new_data \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
---trigger-event-filters="bucket=$mybucket"
+--trigger-event-filters="bucket=$mybucket" \
+--service-account=646746772657-compute@developer.gserviceaccount.com
 
 # Deploy Email CSV Report and Trigger
 gcloud functions deploy email-csv \
@@ -50,10 +57,11 @@ gcloud functions deploy email-csv \
 --source=./src/email_csv \
 --entry-point send_csv_email \
 --trigger-resource export_to_csv \
---trigger-event google.pubsub.topic.publish
+--trigger-event google.pubsub.topic.publish \
+--service-account=646746772657-compute@developer.gserviceaccount.com
 
 gcloud scheduler jobs create pubsub export_to_csv \
 --schedule="00 7 * * *" \
 --location="$REGION" \
 --topic export_to_csv \
---message-body="Sent Scheduled Email"
+--message-body="Sent Scheduled Email" 
