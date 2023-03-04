@@ -2,24 +2,35 @@
 #
 # This script is intended to be run once to setup GCP resources 
 # for the PAgCASA-Report-Emailer
-# You may need to enable IAM permssions by running the following command
-
-# Enable IAM permissions:
-#gcloud iam service-accounts add-iam-policy-binding \
-#    PROJECT_NUMBER-compute@developer.gserviceaccount.com \
-#    --member MEMBER \
-#    --role roles/iam.serviceAccountUser
-
-# gcloud iam service-accounts add-iam-policy-binding \
-#    646746772657-compute@developer.gserviceaccount.com \
-#    --member serviceAccountyounjada@oregonstate.edu \
-#    --role roles/cloudfunctions.admin
-
 
 usage="$0 <bucket>"
 gcs_bucket=${1:?Please provide the GCS bucket: ${usage}}
 
+
+PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER=646746772657
+SERVICE_ACCOUNT="$(gsutil kms serviceaccount -p ${PROJECT_ID})"
 REGION=us-west1
+
+# You may need to enable IAM permssions by running the following commands
+# Enable IAM permissions:
+#gcloud iam service-accounts add-iam-policy-binding \
+#    ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+#    --member MEMBER \
+#    --role roles/iam.serviceAccountUser
+
+# gcloud iam service-accounts add-iam-policy-binding \
+#    ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+#    --member serviceAccount=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+#    --role roles/cloudfunctions.admin
+
+#gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+#    --member="serviceAccount:${SERVICE_ACCOUNT}" \
+#    --role='roles/pubsub.publisher'
+
+
+# Enable Services
+# gcloud services enable run.googleapis.com logging.googleapis.com cloudbuild.googleapis.com storage.googleapis.com pubsub.googleapis.com eventarc.googleapis.com
 
 # Create the GCS bucket if it doesn't exist.
 buckets=$(gsutil ls)
@@ -47,18 +58,22 @@ gcloud functions deploy get-new-upload \
 --entry-point=get_new_data \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
 --trigger-event-filters="bucket=$mybucket" \
---service-account=646746772657-compute@developer.gserviceaccount.com
+--service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
+
+# Create Pub/Sub Topic
+gcloud pubsub topics create export_to_csv
 
 # Deploy Email CSV Report and Trigger
+
+
 gcloud functions deploy email-csv \
 --gen2 \
 --region=$REGION \
 --runtime=python310 \
 --source=./src/email_csv \
 --entry-point send_csv_email \
---trigger-resource export_to_csv \
---trigger-event google.pubsub.topic.publish \
---service-account=646746772657-compute@developer.gserviceaccount.com
+--trigger-topic=export_to_csv \
+--service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
 
 gcloud scheduler jobs create pubsub export_to_csv \
 --schedule="00 7 * * *" \
