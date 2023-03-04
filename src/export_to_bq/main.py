@@ -41,10 +41,10 @@ def get_new_data(cloud_event):
    while True:
       # Try to insert the data
       try:
-         if "ookla" in name:
+         if "multi-stream" in name:
             DML.insert_json_uri(DML.multistream_table, DML.multistream_table_id, uri)
          
-         elif "mlab" in name:
+         elif "ndt7" in name:
             DML.insert_json_uri(DML.ndt7_table, DML.ndt7_table_id, uri)
          break
       except:
