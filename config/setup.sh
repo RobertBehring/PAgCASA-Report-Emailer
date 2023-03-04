@@ -8,11 +8,11 @@ gcs_bucket=${1:?Please provide the GCS bucket: ${usage}}
 
 
 PROJECT_ID=$(gcloud config get-value project)
-PROJECT_NUMBER=646746772657
+PROJECT_NUMBER=YOUR-PROJECT_NUMBER
 SERVICE_ACCOUNT="$(gsutil kms serviceaccount -p ${PROJECT_ID})"
 REGION=us-west1
 
-# You may need to enable IAM permssions by running the following commands
+# You may need to enable the required IAM permssions and Services by running the following commands
 # Enable IAM permissions:
 #gcloud iam service-accounts add-iam-policy-binding \
 #    ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
