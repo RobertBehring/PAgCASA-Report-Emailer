@@ -60,7 +60,7 @@ The PAgCASA Report Emailer Functions requires the following GCP Resources:
 Users may enable the required services and permissions using either the GCP Console or by uncommenting and updating the required fields in config/setup.sh.
 
 **Installation**  
-Prior to running the command, navigate to `config/setup.sh` and update all required project information.  
+Prior to running the command navigate to `config/setup.sh` and each function's `.env` file and update all required project information.  
 In the gcloud CLI, enable file execution then run the configuration file as shown, substituing DATA_BUCKET_NAME with the name of your GCP Data Bucket:
 ```bash
 python chmod u+x ./config/setup.sh
