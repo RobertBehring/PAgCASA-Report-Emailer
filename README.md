@@ -25,7 +25,41 @@ The PAgCASA Report Emailer is intended for use within the Google Cloud Platform 
 ---
 The deployment of the PAgCASA Report Emailer is broken into three steps. It is assumed that the user has already deployed M-Lab's Murakami testing tool onto their own GCP.
 
+The below guide provides two installation options for creating the required GCP Resources.
+### **1) Quick Install Guide**
 
+**Getting Started**  
+Prior to beginning, ensure that you have downloaded the required source files and are in the correct GCP project using the following instructions:
+1. Navigate to the directory you want to store your source code
+2. Clone the associated source code git repository from GitHub using the link above or the following line of code in your terminal
+
+```bash
+git clone https://github.com/RobertBehring/PAgCASA-Report-Emailer.git
+```
+
+3. Make sure you are in the correct GCP project in the gcloud CLI. The following code will allow you to set your code according to the PROJECT_ID you provide.
+
+```bash
+gcloud config set project PROJECT_ID
+```
+
+**GCP Services and Permissions**  
+The PAgCASA Report Emailer Functions requires the following GCP IAM Permissions to be enabled:
+- iam.serviceAccountUser
+- cloudfunctions.admin
+- pubsub.publisher
+
+The PAgCASA Report Emailer Functions requires the following GCP Resources:
+- run.googleapis.com 
+- logging.googleapis.com 
+- cloudbuild.googleapis.com 
+- storage.googleapis.com 
+- pubsub.googleapis.com 
+- eventarc.googleapis.com
+
+Users may enable the required services and permissions using either the GCP Console or by uncommenting and updating the required fields in config/setup.sh.
+
+### **2) Step-By-Step Guide**
 ### BigQuery Dataset
 BigQuery is a cloud service offered by Google LLC and is available within their Google Cloud Platform (GCP). Before installation of BigQuery, one must first sign up for a Google account and gain access to their own private/shared GCP. This installation guide will cover the creation of the BigQuery dataset (DeviceBroadbandData) and the associated tables (Multistream and NDT-7). 
 

@@ -6,11 +6,15 @@
 usage="$0 <bucket>"
 gcs_bucket=${1:?Please provide the GCS bucket: ${usage}}
 
-
+# Current Project
 PROJECT_ID=$(gcloud config get-value project)
+# UPDATE ME: Project Number can be found on the main page of your project
 PROJECT_NUMBER=YOUR-PROJECT_NUMBER
+# Default Service Account
 SERVICE_ACCOUNT="$(gsutil kms serviceaccount -p ${PROJECT_ID})"
 REGION=us-west1
+# Update if using permissions commands
+MEMBER= 
 
 # You may need to enable the required IAM permssions and Services by running the following commands
 # Enable IAM permissions:
@@ -75,8 +79,14 @@ gcloud functions deploy email-csv \
 --trigger-topic=export_to_csv \
 --service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
 
-gcloud scheduler jobs create pubsub export_to_csv \
+gcloud scheduler jobs create pubsub weekly_export_to_csv \
 --schedule="00 7 * * *" \
 --location="$REGION" \
 --topic export_to_csv \
---message-body="Sent Scheduled Email" 
+--message-body="Sent Weekly Email" 
+
+gcloud scheduler jobs create pubsub daily_export_to_csv \
+--schedule="0 9 * * *" \
+--location="$REGION" \
+--topic export_to_csv \
+--message-body="Sent Scheduled Email"
