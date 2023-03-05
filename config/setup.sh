@@ -89,4 +89,4 @@ gcloud scheduler jobs create pubsub daily_export_to_csv \
 --schedule="0 9 * * *" \
 --location="$REGION" \
 --topic export_to_csv \
---message-body="Sent Scheduled Email"
+--message-body="Sent Daily Email"
