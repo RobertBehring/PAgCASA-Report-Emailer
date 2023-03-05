@@ -168,6 +168,14 @@ gcloud scheduler jobs create pubsub daily_export_to_csv \
 > **Note** 
 >The schedule flag can be substituted with any cron expression to customize the sending intervals. The Daily and Weekly intervals have been provided.
 
+## Looker Studio
+
+After creating the required BigQuery Tables and importing data, users may visualize their data using the provided [Looker Studio Template](https://lookerstudio.google.com/u/3/reporting/ed16a23b-d713-455c-9556-bacdf57b7021/page/p_rj30zb6j3c/preview).
+
+The report includes the following pre-made charts:
+1) List of Tests That Do Not Meet 25/3 Mbps Standard (By Date)
+2) Chart of Upload/Download Speeds (By IP and Date)
+
 
 <!-- ## Appendix -->
 
