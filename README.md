@@ -25,7 +25,51 @@ The PAgCASA Report Emailer is intended for use within the Google Cloud Platform 
 ---
 The deployment of the PAgCASA Report Emailer is broken into three steps. It is assumed that the user has already deployed M-Lab's Murakami testing tool onto their own GCP.
 
+The below guide provides two installation options for creating the required GCP Resources.
+### **1) Quick Install Guide**
 
+**Getting Started**  
+Prior to beginning, ensure that you have downloaded the required source files and are in the correct GCP project using the following instructions:
+1. Navigate to the directory you want to store your source code
+2. Clone the associated source code git repository from GitHub using the link above or the following line of code in your terminal
+
+```bash
+git clone https://github.com/RobertBehring/PAgCASA-Report-Emailer.git
+```
+
+3. Make sure you are in the correct GCP project in the gcloud CLI. The following code will allow you to set your code according to the PROJECT_ID you provide.
+
+```bash
+gcloud config set project PROJECT_ID
+```
+
+**GCP Services and Permissions**  
+The PAgCASA Report Emailer Functions requires the following GCP IAM Permissions to be enabled:
+- iam.serviceAccountUser
+- cloudfunctions.admin
+- pubsub.publisher
+
+The PAgCASA Report Emailer Functions requires the following GCP Resources:
+- run.googleapis.com 
+- logging.googleapis.com 
+- cloudbuild.googleapis.com 
+- storage.googleapis.com 
+- pubsub.googleapis.com 
+- eventarc.googleapis.com
+
+Users may enable the required services and permissions using either the GCP Console or by uncommenting and updating the required fields in config/setup.sh.
+
+**Installation**  
+Prior to running the command navigate to `config/setup.sh` and each function's `.env` file and update all required project information.  
+In the gcloud CLI, enable file execution then run the configuration file as shown, substituing DATA_BUCKET_NAME with the name of your GCP Data Bucket:
+```bash
+python chmod u+x ./config/setup.sh
+./config.setup.sh DATA_BUCKET_NAME
+```
+> **Note**  
+> The Export-to-BQ Cloud Function only monitors for the creation of new objects and the editing of existing objects stored in the designated GCS Bucket. If you would like to incorporate older data, it is recommended to setup the project using a new bucket, then transfer the pre-existing data. 
+
+### **2) Step-By-Step Guide**
 ### BigQuery Dataset
 BigQuery is a cloud service offered by Google LLC and is available within their Google Cloud Platform (GCP). Before installation of BigQuery, one must first sign up for a Google account and gain access to their own private/shared GCP. This installation guide will cover the creation of the BigQuery dataset (DeviceBroadbandData) and the associated tables (Multistream and NDT-7). 
 
@@ -55,31 +99,23 @@ python DDL.py
 ### Export to BigQuery
 The GCS Bucket Migration Tool is an automation designed to detect when broadband test data is uploaded to a target GCP Storage Bucket and transfers the data to the proper BigQuery Table. This tool assumes that you have created the BigQuery Dataset as described in the previous section. If you have not done so, please create the BigQuery Dataset prior to deploying this function. 
 
-1. If using the Google CLI, upload the function source file `get-new-upload_function-source.zip` to a GCP storage bucket:
-
-```bash
-gcloud storage cp /local/path/to/get-new-upload_function-source.zip gs://FUNCTION_BUCKET_NAME/
-```
-
-This will create a new GCP storage bucket that contains the required source code. 
-
-2. (If required) Create a new bucket to hold speed test json data by running the following command in the Google CLI:
+1. (If required) Create a new bucket to hold speed test json data by running the following command in the Google CLI:
 
 ```bash
 gcloud storage buckets create gs://YOUR_DATA_BUCKET_NAME
 ```
 
-3. Next, deploy the function by running the following command:
+2. Next, make sure that you are in the source code folder, then deploy the function by running the following command:
 ```bash
 gcloud functions deploy get-new-upload \
 --gen2 \
 --region=us-west1 \
 --runtime=python310 \
---source=gs://FUNCTION_BUCKET_NAME/get-new-upload_function-source.zip \
+--source=./src/export_to_bq \
 --entry-point=get_new_data \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
 --trigger-event-filters="bucket=YOUR_DATA_BUCKET_NAME" \
---service-account=PROJECT_NUMBER-compute@developer.gserviceaccount.com
+--service-account=YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com
 ```
 
 > **Note**
@@ -89,39 +125,56 @@ gcloud functions deploy get-new-upload \
 ### Email CSV Report
 The CSV Report Emailer tool (email_csv.py) is a cloud function program that utilizes other cloud services to run. Globally, you will need to have a Google Cloud Platform (GCP) environment along with the associated Google Cloud Service BigQuery and the respective dataset. Do not continue if you have not set up your BigQuery dataset as outlined above in the “Creating the BigQuery Dataset” section. This section will go through how to deploy the email_csv.py program in your GCP environment. 
 
-1. If using the Google CLI, upload the function source file `email_csv_function-source.zip` to a GCP storage bucket:
+1. Create a Pub/Sub Topic by running the following command:
 
 ```bash
-gcloud storage cp /local/path/to/email_csv_function-source.zip gs://FUNCTION_BUCKET_NAME/
+gcloud pubsub topics create export_to_csv
 ```
-This will create a new GCP storage bucket that contains the required source code. 
+This will create a new GCP Pub/Sub Topic that receives messages from the Cloud Scheduler jobs and is subscribed to by the Cloud Function. 
 
-2. Deploy the function and create a trigger by running the following command:
+2. Deploy the function by running the following command:
 
 ```bash
 gcloud functions deploy email-csv \
 --gen2 \
 --region=us-west1 \
 --runtime=python310 \
---source=gs://FUNCTION_BUCKET_NAME/email-csv/function-source.zip \
+--source=./src/email_csv \
 --entry-point send_csv_email \
---trigger-resource export_to_csv \
---trigger-event google.pubsub.topic.publish \
---set-env-vars SENDGRID_API_KEY=YOUR_SENDGRID_API_KEY
+--trigger-topic=export_to_csv \
+--service-account=YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com
 ```
+
+This command deploys the function and creates a trigger that subscribes to the topic created in the previous step.
 
 3. Create the Cloud Scheduler job to automatically send the email results. 
 
 ```bash
-gcloud scheduler jobs create pubsub export_to_csv \
+gcloud scheduler jobs create pubsub weekly_export_to_csv \
 --schedule="00 7 * * *" \
 --location="us-west1" \
 --topic export_to_csv \
---message-body="Sent Scheduled Email"
+--message-body="Sent Weekly Email"
+```
+
+```bash
+gcloud scheduler jobs create pubsub daily_export_to_csv \
+--schedule="0 9 * * *" \
+--location="us-west1" \
+--topic export_to_csv \
+--message-body="Sent Daily Email"
 ```
 
 > **Note** 
->The schedule flag can be substituted with any cron expression to customize the sending intervals.
+>The schedule flag can be substituted with any cron expression to customize the sending intervals. The Daily and Weekly intervals have been provided.
+
+## Looker Studio
+
+After creating the required BigQuery Tables and importing data, users may visualize their data using the provided [Looker Studio Template](https://lookerstudio.google.com/u/3/reporting/ed16a23b-d713-455c-9556-bacdf57b7021/page/p_rj30zb6j3c/preview).
+
+The report includes the following pre-made charts:
+1) List of Tests That Do Not Meet 25/3 Mbps Standard (By Date)
+2) Chart of Upload/Download Speeds (By IP and Date)
 
 
 <!-- ## Appendix -->
