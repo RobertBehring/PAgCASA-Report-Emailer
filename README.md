@@ -60,7 +60,7 @@ The PAgCASA Report Emailer Functions requires the following GCP Resources:
 Users may enable the required services and permissions using either the GCP Console or by uncommenting and updating the required fields in config/setup.sh.
 
 **Installation**  
-Prior to running the command navigate to `config/setup.sh` and each function's `.env` file and update all required project information.  
+Prior to running the command navigate to `config/setup.sh` and each function's `.env` file and update all required project information. In any bucket of your choosing, include a .csv file with all the email addresses that you'd like to recieve the data report, ensuring that the first column of that .csv file contains only email addresses.  
 In the gcloud CLI, enable file execution then run the configuration file as shown, substituing DATA_BUCKET_NAME with the name of your GCP Data Bucket:
 ```bash
 python chmod u+x ./config/setup.sh
@@ -123,7 +123,7 @@ gcloud functions deploy get-new-upload \
 
 
 ### Email CSV Report
-The CSV Report Emailer tool (email_csv.py) is a cloud function program that utilizes other cloud services to run. Globally, you will need to have a Google Cloud Platform (GCP) environment along with the associated Google Cloud Service BigQuery and the respective dataset. Do not continue if you have not set up your BigQuery dataset as outlined above in the “Creating the BigQuery Dataset” section. This section will go through how to deploy the email_csv.py program in your GCP environment. 
+The CSV Report Emailer (email_csv folder) tool is a cloud function program that utilizes other cloud services to run. Globally, you will need to have a Google Cloud Platform (GCP) environment along with the associated Google Cloud Service BigQuery and the respective dataset. Do not continue if you have not set up your BigQuery dataset as outlined above in the “Creating the BigQuery Dataset” section. This section will go through how to deploy the email_csv.py program in your GCP environment. 
 
 1. Create a Pub/Sub Topic by running the following command:
 
@@ -167,6 +167,8 @@ gcloud scheduler jobs create pubsub daily_export_to_csv \
 
 > **Note** 
 >The schedule flag can be substituted with any cron expression to customize the sending intervals. The Daily and Weekly intervals have been provided.
+
+4. Add a .csv file to a data bucket with all the contacts you would like to receive the emails created by this function. There is an example of the format of the .csv file in the email_csv folder titled "contacts.csv". Indicate which bucket has the .csv file and the name of that file in the .env file in the email_csv folder. 
 
 ## Looker Studio
 
